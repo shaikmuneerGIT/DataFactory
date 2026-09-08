@@ -1,0 +1,12 @@
+{
+	"name": "Firstadfmuneer",
+	"properties": {
+		"globalParameters": {
+			"env": {
+				"type": "string",
+				"value": "dev"
+			}
+		}
+	},
+	"location": "eastus"
+}
