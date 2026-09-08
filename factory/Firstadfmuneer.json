@@ -1,0 +1,15 @@
+{
+	"name": "Firstadfmuneer",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "1b873192-e63e-4345-beaf-e2c4d6c389bf",
+		"tenantId": "70d48915-9aaa-460f-9616-a32e05fd1a74"
+	}
+}
