@@ -13,12 +13,7 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": [
-					{
-						"name": "job_id",
-						"value": "201"
-					}
-				],
+				"userProperties": [],
 				"typeProperties": {
 					"source": {
 						"type": "AzureDatabricksDeltaLakeSource",
@@ -34,6 +29,12 @@
 				}
 			}
 		],
+		"parameters": {
+			"job_id": {
+				"type": "string",
+				"defaultValue": "201"
+			}
+		},
 		"annotations": []
 	}
 }
