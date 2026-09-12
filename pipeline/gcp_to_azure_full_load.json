@@ -1,0 +1,6 @@
+{
+	"name": "gcp_to_azure_full_load",
+	"properties": {
+		"annotations": []
+	}
+}
