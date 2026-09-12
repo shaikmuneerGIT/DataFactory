@@ -1,0 +1,10 @@
+{
+	"name": "ls_AzurekeyVault",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://cs-keyvault-muneer.vault.azure.net/"
+		}
+	}
+}
