@@ -18,7 +18,7 @@
 					"source": {
 						"type": "AzureDatabricksDeltaLakeSource",
 						"query": {
-							"value": "@concat('select param.*, control.* from metadata_schema.tbl_source_control as control inner join metadata_schema.tbl_parameters as param on param.job_id = control.job_id where control.job_id = ''', pipeline().parameters.job_id, '''')\n",
+							"value": "@concat('select param.*, control.* from metadata_schema.tbl_source_control as control, metadata_schema.tbl_parameters as param where param.job_id = ', string(pipeline().parameters.job_id))\n",
 							"type": "Expression"
 						}
 					},
