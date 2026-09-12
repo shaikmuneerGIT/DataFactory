@@ -1,0 +1,17 @@
+{
+	"name": "ls_gcp",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "GoogleCloudStorage",
+		"typeProperties": {
+			"serviceUrl": "https://storage.googleapis.com",
+			"accessKeyId": "GOOG1E4D2RYE2XOKIVRVJ3FU53AJFKZZKFUECKNRSXDMHUTJ5D77CTVILH47C",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIzY2I1MTFkZi02NWI2LTQ4MDgtYjNhNy0xZDlkMmRjNTJiYzgiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "shir-telecom",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
