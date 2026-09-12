@@ -1,0 +1,35 @@
+{
+	"name": "ds_input_gcp",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_gcp",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"bucket": {
+				"type": "string",
+				"defaultValue": "csgcpstorage_muneer"
+			},
+			"folder": {
+				"type": "string",
+				"defaultValue": "telecom/dim_cities"
+			},
+			"file": {
+				"type": "string",
+				"defaultValue": "telecom_dim_cities_20231219.csv"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "GoogleCloudStorageLocation"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
