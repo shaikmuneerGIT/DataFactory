@@ -1,0 +1,16 @@
+{
+	"name": "ls_dataricks_delatlake",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricksDeltaLake",
+		"typeProperties": {
+			"domain": "https://adb-7405611181357276.16.azuredatabricks.net",
+			"clusterId": "0908-141245-3rcoj6oy",
+			"workspaceResourceId": "/subscriptions/10b7fd1b-a969-406c-bd79-380373dad3ee/resourceGroups/test/providers/Microsoft.Databricks/workspaces/cs-databricks-muneer"
+		},
+		"connectVia": {
+			"referenceName": "shir-telecom",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
