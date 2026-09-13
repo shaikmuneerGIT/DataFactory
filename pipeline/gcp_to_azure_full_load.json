@@ -18,7 +18,7 @@
 					"source": {
 						"type": "AzureDatabricksDeltaLakeSource",
 						"query": {
-							"value": "@concat('select param.*, control.* from metadata_schema.tbl_source_control as control, metadata_schema.tbl_parameters as param where param.job_id = ', string(pipeline().parameters.job_id))\n",
+							"value": "@concat('select p.job_id, p.source_file_path, date_format(p.watermark_column, \"yyyy-MM-dd''T''HH:mm:ss.SSS''Z''\") as watermark_column, p.raw_schema, p.raw_tbl, p.intermediate_schema, p.intermediate_tbl, p.intermediate_query, p.curated_schema, p.curated_tbl, p.curated_query, s.gcp_source_bucket, s.storage_account, s.adls_url, s.container_name, s.logic_app_url, s.email_id from cs_databricks_muneer.metadata_schema.tbl_parameters p cross join cs_databricks_muneer.metadata_schema.tbl_source_control s where p.job_id = ', pipeline().parameters.job_id)\n",
 							"type": "Expression"
 						}
 					},
@@ -63,7 +63,7 @@
 					"storeSettings": {
 						"type": "GoogleCloudStorageReadSettings",
 						"modifiedDatetimeStart": {
-							"value": "@convertFromUtc(activity('metadata_lookup').output.firstRow.watermark_column, 'India Standard Time')",
+							"value": "@activity('metadata_lookup').output.firstRow.watermark_column\n",
 							"type": "Expression"
 						},
 						"enablePartitionDiscovery": false
