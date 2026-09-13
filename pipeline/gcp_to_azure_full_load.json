@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "meta_data lookup",
+				"name": "metadata_lookup",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -33,7 +33,7 @@
 				"type": "GetMetadata",
 				"dependsOn": [
 					{
-						"activity": "meta_data lookup",
+						"activity": "metadata_lookup",
 						"dependencyConditions": [
 							"Completed"
 						]
@@ -61,7 +61,7 @@
 					"storeSettings": {
 						"type": "GoogleCloudStorageReadSettings",
 						"modifiedDatetimeStart": {
-							"value": "@convertToUtc(activity('metadata_lookup').output.firstRow.watermark_column, 'India Standard Time')\n",
+							"value": "@convertFromUtc(activity('metadata_lookup').output.firstRow.watermark_column, 'India Standard Time')",
 							"type": "Expression"
 						},
 						"enablePartitionDiscovery": false
