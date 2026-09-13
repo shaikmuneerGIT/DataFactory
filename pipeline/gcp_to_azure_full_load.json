@@ -139,6 +139,59 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "for each source file",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "File_proper_format_count_check",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('file_name_and_extension_check').output.Value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "get_file_last_modified_time",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_input_gcp",
+									"type": "DatasetReference",
+									"parameters": {
+										"bucket": "csgcpstorage_muneer",
+										"folder": "telecom/dim_cities"
+									}
+								},
+								"fieldList": [],
+								"storeSettings": {
+									"type": "GoogleCloudStorageReadSettings",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
