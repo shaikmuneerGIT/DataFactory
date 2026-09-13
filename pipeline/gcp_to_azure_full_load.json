@@ -173,7 +173,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"dataset": {
-									"referenceName": "ds_input_gcp",
+									"referenceName": "ds_input_gcp_file",
 									"type": "DatasetReference",
 									"parameters": {
 										"bucket": {
@@ -195,10 +195,6 @@
 								],
 								"storeSettings": {
 									"type": "GoogleCloudStorageReadSettings",
-									"modifiedDatetimeStart": {
-										"value": "@activity('metadata_lookup').output.firstRow.watermark_column",
-										"type": "Expression"
-									},
 									"enablePartitionDiscovery": false
 								},
 								"formatSettings": {
@@ -260,7 +256,7 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "ds_input_gcp",
+									"referenceName": "ds_input_gcp_file",
 									"type": "DatasetReference",
 									"parameters": {
 										"bucket": {
