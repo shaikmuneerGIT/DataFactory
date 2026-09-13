@@ -120,6 +120,25 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "File_proper_format_count_check",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "file_name_and_extension_check",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(length(activity('file_name_and_extension_check').output.Value),0 )",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"parameters": {
