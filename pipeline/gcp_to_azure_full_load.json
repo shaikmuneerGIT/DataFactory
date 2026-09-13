@@ -63,7 +63,7 @@
 					"storeSettings": {
 						"type": "GoogleCloudStorageReadSettings",
 						"modifiedDatetimeStart": {
-							"value": "@activity('metadata_lookup').output.firstRow.watermark_column\n",
+							"value": "@concat(activity('metadata_lookup').output.firstRow.watermark_column, 'Z')\n",
 							"type": "Expression"
 						},
 						"enablePartitionDiscovery": false
