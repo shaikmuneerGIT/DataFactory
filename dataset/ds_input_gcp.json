@@ -23,7 +23,19 @@
 		"type": "DelimitedText",
 		"typeProperties": {
 			"location": {
-				"type": "GoogleCloudStorageLocation"
+				"type": "GoogleCloudStorageLocation",
+				"bucketName": {
+					"value": "@dataset().bucket",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().folder",
+					"type": "Expression"
+				},
+				"fileName": {
+					"value": "@dataset().file",
+					"type": "Expression"
+				}
 			},
 			"columnDelimiter": ",",
 			"escapeChar": "\\",
