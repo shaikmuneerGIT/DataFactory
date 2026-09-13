@@ -96,7 +96,76 @@
 					"expression": {
 						"value": "@greater(length(activity('get_source_file_names').output.childItems),0)",
 						"type": "Expression"
-					}
+					},
+					"ifFalseActivities": [
+						{
+							"name": "no_files_available_to_ingest_log",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/databricks_notebooks/log_record_tbl_insert",
+								"baseParameters": {
+									"env": {
+										"value": "@pipeline().globalParameters.env",
+										"type": "Expression"
+									},
+									"pipeLineName": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"logMessage": {
+										"value": "No latest files available in source location toingest",
+										"type": "Expression"
+									},
+									"status": {
+										"value": "Success",
+										"type": "Expression"
+									},
+									"triggerTyep": {
+										"value": "@pipeline().TriggerTime",
+										"type": "Expression"
+									},
+									"loadId": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"logTimeStamp": {
+										"value": "@convertFromUtc(utcNow(),'India Standard Time','yyyy-MM-dd' )  ",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_databricks_compute",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "End_pipeline_no_files_to_ingest",
+							"type": "Fail",
+							"dependsOn": [
+								{
+									"activity": "no_files_available_to_ingest_log",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "No files available in source to ingest",
+								"errorCode": "No files available in source to ingest"
+							}
+						}
+					]
 				}
 			},
 			{
