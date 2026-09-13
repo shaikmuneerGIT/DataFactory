@@ -31,10 +31,6 @@
 				"folderPath": {
 					"value": "@dataset().folder",
 					"type": "Expression"
-				},
-				"fileName": {
-					"value": "@dataset().file",
-					"type": "Expression"
 				}
 			},
 			"columnDelimiter": ",",
