@@ -57,7 +57,9 @@
 							"file": "telecom_dim_cities_20231219.csv"
 						}
 					},
-					"fieldList": [],
+					"fieldList": [
+						"childItems"
+					],
 					"storeSettings": {
 						"type": "GoogleCloudStorageReadSettings",
 						"modifiedDatetimeStart": {
