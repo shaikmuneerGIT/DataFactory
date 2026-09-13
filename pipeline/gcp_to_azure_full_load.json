@@ -90,7 +90,13 @@
 						]
 					}
 				],
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(length(activity('get_source_file_names').output.childItems),0)",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"parameters": {
