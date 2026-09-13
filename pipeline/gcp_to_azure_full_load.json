@@ -177,7 +177,7 @@
 									"type": "DatasetReference",
 									"parameters": {
 										"bucket": {
-											"value": "@activity('metadata_lookup').output.firstRow.gcp_source_backet",
+											"value": "@activity('metadata_lookup').output.firstRow.gcp_source_bucket",
 											"type": "Expression"
 										},
 										"folder": {
