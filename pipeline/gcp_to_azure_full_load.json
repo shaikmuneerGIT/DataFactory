@@ -78,6 +78,19 @@
 						"type": "DelimitedTextReadSettings"
 					}
 				}
+			},
+			{
+				"name": "file_count_check",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "get_source_file_names",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": []
 			}
 		],
 		"parameters": {
