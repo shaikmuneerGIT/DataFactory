@@ -27,6 +27,49 @@
 						"type": "DatasetReference"
 					}
 				}
+			},
+			{
+				"name": "get_source_file_names",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "meta_data lookup",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_input_gcp",
+						"type": "DatasetReference",
+						"parameters": {
+							"bucket": "csgcpstorage_muneer",
+							"folder": "telecom/dim_cities",
+							"file": "telecom_dim_cities_20231219.csv"
+						}
+					},
+					"fieldList": [],
+					"storeSettings": {
+						"type": "GoogleCloudStorageReadSettings",
+						"modifiedDatetimeStart": {
+							"value": "@convertToUtc(activity('metadata_lookup').output.firstRow.watermark_column, 'India Standard Time')\n",
+							"type": "Expression"
+						},
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
 			}
 		],
 		"parameters": {
