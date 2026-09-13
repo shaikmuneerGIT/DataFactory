@@ -313,31 +313,14 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"notebookPath": "/databricks_notebooks/log_record_tbl_insert",
+								"notebookPath": "/databricks_notebooks/dbx_update_watermark_column",
 								"baseParameters": {
-									"env": {
-										"value": "@pipeline().globalParameters.env",
+									"job_id": {
+										"value": "@pipeline().parameters.job_id",
 										"type": "Expression"
 									},
-									"pipeLineName": {
-										"value": "@pipeline().Pipeline",
-										"type": "Expression"
-									},
-									"logMessage": {
-										"value": "@concat('Copied file  @{item().name} to landing container.')\n",
-										"type": "Expression"
-									},
-									"status": "Succes",
-									"triggerTyep": {
-										"value": "@pipeline().TriggerTime",
-										"type": "Expression"
-									},
-									"loadId": {
-										"value": "@pipeline().RunId",
-										"type": "Expression"
-									},
-									"logTimeStamp": {
-										"value": "@convertFromUtc(utcNow(),'India Standard Time','yyyy-MM-dd' )  ",
+									"gcp_file_last_modified_time": {
+										"value": "@convertFromUtc(addSeconds(activity('get_file_last_modified_time').output.lastModified, 1), 'India Standard Time', 'yyyy-MM-dd HH:mm:ss')\n",
 										"type": "Expression"
 									}
 								}
