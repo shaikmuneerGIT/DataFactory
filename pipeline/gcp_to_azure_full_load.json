@@ -260,7 +260,7 @@
 							}
 						},
 						{
-							"name": "End_pipeline_no_files_to_ingest_copy1",
+							"name": "End_pipeline_no_files_proper_to_ingest",
 							"type": "Fail",
 							"dependsOn": [
 								{
@@ -272,8 +272,14 @@
 							],
 							"userProperties": [],
 							"typeProperties": {
-								"message": "'No files available in source to ingest'",
-								"errorCode": "'No files available in source to ingest'"
+								"message": {
+									"value": "No proper format file available in source to ingest",
+									"type": "Expression"
+								},
+								"errorCode": {
+									"value": "No proper format files available in source to ingest",
+									"type": "Expression"
+								}
 							}
 						}
 					]
