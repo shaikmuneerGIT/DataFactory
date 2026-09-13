@@ -97,6 +97,29 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "file_name_and_extension_check",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "file_count_check",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('get_source_file_names').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@and(startswith(item().name,'telecom_dim'),endswith(item().name,'.csv')) ",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"parameters": {
