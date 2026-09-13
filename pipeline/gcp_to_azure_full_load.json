@@ -161,8 +161,8 @@
 							],
 							"userProperties": [],
 							"typeProperties": {
-								"message": "No files available in source to ingest",
-								"errorCode": "No files available in source to ingest"
+								"message": "'No files available in source to ingest'",
+								"errorCode": "'No files available in source to ingest'"
 							}
 						}
 					]
