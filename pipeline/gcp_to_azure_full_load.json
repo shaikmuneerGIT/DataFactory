@@ -180,9 +180,15 @@
 										"folder": "telecom/dim_cities"
 									}
 								},
-								"fieldList": [],
+								"fieldList": [
+									"lastModified"
+								],
 								"storeSettings": {
 									"type": "GoogleCloudStorageReadSettings",
+									"modifiedDatetimeStart": {
+										"value": "@activity('metadata_lookup').output.firstRow.watermark_column",
+										"type": "Expression"
+									},
 									"enablePartitionDiscovery": false
 								},
 								"formatSettings": {
