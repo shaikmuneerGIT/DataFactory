@@ -15,8 +15,7 @@
 				"defaultValue": "telecom/dim_cities"
 			},
 			"file": {
-				"type": "string",
-				"defaultValue": "telecom_dim_cities_20231219.csv"
+				"type": "string"
 			}
 		},
 		"annotations": [],
