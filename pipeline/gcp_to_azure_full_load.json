@@ -176,8 +176,18 @@
 									"referenceName": "ds_input_gcp",
 									"type": "DatasetReference",
 									"parameters": {
-										"bucket": "csgcpstorage_muneer",
-										"folder": "telecom/dim_cities"
+										"bucket": {
+											"value": "@activity('metadata_lookup').output.firstRow.gcp_source_backet",
+											"type": "Expression"
+										},
+										"folder": {
+											"value": "@activity('metadata_lookup').output.firstRow.source_file_path",
+											"type": "Expression"
+										},
+										"file": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
 									}
 								},
 								"fieldList": [
