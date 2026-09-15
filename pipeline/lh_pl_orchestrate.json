@@ -61,7 +61,7 @@
 				"typeProperties": {
 					"variableName": "run_plan",
 					"value": {
-						"value": "@json(activity('Get Run Plan').output.runOutput)",
+						"value": "@activity('Get Run Plan').output.runOutput",
 						"type": "Expression"
 					}
 				}
@@ -396,15 +396,15 @@
 					"waitOnCompletion": true,
 					"parameters": {
 						"status": {
-							"value": "@json(activity('Run Report').output.runOutput).overall",
+							"value": "@activity('Run Report').output.runOutput.overall",
 							"type": "Expression"
 						},
 						"subject": {
-							"value": "@json(activity('Run Report').output.runOutput).subject",
+							"value": "@activity('Run Report').output.runOutput.subject",
 							"type": "Expression"
 						},
 						"body_html": {
-							"value": "@json(activity('Run Report').output.runOutput).body_html",
+							"value": "@activity('Run Report').output.runOutput.body_html",
 							"type": "Expression"
 						},
 						"load_id": {

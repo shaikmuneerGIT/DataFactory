@@ -839,19 +839,19 @@
 						"layer": "entity",
 						"status": "SUCCESS",
 						"rows_read": {
-							"value": "@string(json(activity('Silver Transform').output.runOutput).rows_in)",
+							"value": "@string(activity('Silver Transform').output.runOutput.rows_in)",
 							"type": "Expression"
 						},
 						"rows_written": {
-							"value": "@string(json(activity('Silver Transform').output.runOutput).rows_merged)",
+							"value": "@string(activity('Silver Transform').output.runOutput.rows_merged)",
 							"type": "Expression"
 						},
 						"rows_quarantined": {
-							"value": "@string(json(activity('Silver Transform').output.runOutput).rows_quarantined)",
+							"value": "@string(activity('Silver Transform').output.runOutput.rows_quarantined)",
 							"type": "Expression"
 						},
 						"message": {
-							"value": "@concat('files=', string(length(variables('copied_files'))), ' bronze=', string(json(activity('Bronze Ingest').output.runOutput).rows_ingested), ' watermark=', json(activity('Update Watermark').output.runOutput).watermark_ts)",
+							"value": "@concat('files=', string(length(variables('copied_files'))), ' bronze=', string(activity('Bronze Ingest').output.runOutput.rows_ingested), ' watermark=', activity('Update Watermark').output.runOutput.watermark_ts)",
 							"type": "Expression"
 						},
 						"trigger_type": {
