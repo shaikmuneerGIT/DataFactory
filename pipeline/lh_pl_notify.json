@@ -65,7 +65,7 @@
 									"type": "Expression"
 								},
 								"body": {
-									"value": "@createObject('status', pipeline().parameters.status, 'subject', pipeline().parameters.subject, 'body_html', pipeline().parameters.body_html, 'load_id', pipeline().parameters.load_id, 'pipeline', pipeline().parameters.pipeline_name, 'factory', pipeline().DataFactory, 'sent_at', utcNow())",
+									"value": "@json(concat('{\"status\":\"', pipeline().parameters.status, '\",\"subject\":\"', replace(pipeline().parameters.subject, '\"', ''), '\",\"body_html_b64\":\"', base64(pipeline().parameters.body_html), '\",\"load_id\":\"', pipeline().parameters.load_id, '\",\"pipeline\":\"', pipeline().parameters.pipeline_name, '\",\"factory\":\"', pipeline().DataFactory, '\",\"sent_at\":\"', utcNow(), '\"}'))",
 									"type": "Expression"
 								}
 							}

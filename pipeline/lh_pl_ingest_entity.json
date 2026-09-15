@@ -252,7 +252,7 @@
 												"typeProperties": {
 													"variableName": "copied_files",
 													"value": {
-														"value": "@createObject('name', item().name, 'lastModified', activity('Get GCS File Modified').output.lastModified, 'size', activity('Get GCS File Modified').output.size, 'rowsCopied', activity('Copy GCS To Landing').output.filesWritten)",
+														"value": "@json(concat('{\"name\":\"', item().name, '\",\"lastModified\":\"', activity('Get GCS File Modified').output.lastModified, '\",\"size\":', string(activity('Get GCS File Modified').output.size), '}'))",
 														"type": "Expression"
 													}
 												}
@@ -490,7 +490,7 @@
 												"typeProperties": {
 													"variableName": "copied_files",
 													"value": {
-														"value": "@createObject('name', item().name, 'lastModified', activity('Get Inbound File Modified').output.lastModified, 'size', activity('Get Inbound File Modified').output.size)",
+														"value": "@json(concat('{\"name\":\"', item().name, '\",\"lastModified\":\"', activity('Get Inbound File Modified').output.lastModified, '\",\"size\":', string(activity('Get Inbound File Modified').output.size), '}'))",
 														"type": "Expression"
 													}
 												}
@@ -586,7 +586,7 @@
 									"typeProperties": {
 										"variableName": "copied_files",
 										"value": {
-											"value": "@createObject('name', 'oic-rest-extract', 'lastModified', pipeline().parameters.pipeline_start, 'rowsCopied', activity('Extract From OIC').output.rowsCopied)",
+											"value": "@json(concat('{\"name\":\"oic-rest-extract\",\"lastModified\":\"', pipeline().parameters.pipeline_start, '\",\"rowsCopied\":', string(activity('Extract From OIC').output.rowsCopied), '}'))",
 											"type": "Expression"
 										}
 									}
