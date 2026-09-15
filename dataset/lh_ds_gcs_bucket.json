@@ -1,7 +1,7 @@
 {
-	"name": "lh_ds_gcs_file",
+	"name": "lh_ds_gcs_bucket",
 	"properties": {
-		"description": "Single file in the GCS bucket (binary). Source of the binary copy into ADLS landing.",
+		"description": "GCS bucket root (binary). Folder and file are chosen by wildcards in the Copy activity source, so the dataset deliberately has no folder or file path.",
 		"linkedServiceName": {
 			"referenceName": "ls_gcp",
 			"type": "LinkedServiceReference"
@@ -10,12 +10,6 @@
 			"bucket": {
 				"type": "string",
 				"defaultValue": "csgcpstorage_muneer"
-			},
-			"folder": {
-				"type": "string"
-			},
-			"file": {
-				"type": "string"
 			}
 		},
 		"folder": {
@@ -30,14 +24,6 @@
 				"type": "GoogleCloudStorageLocation",
 				"bucketName": {
 					"value": "@dataset().bucket",
-					"type": "Expression"
-				},
-				"folderPath": {
-					"value": "@dataset().folder",
-					"type": "Expression"
-				},
-				"fileName": {
-					"value": "@dataset().file",
 					"type": "Expression"
 				}
 			}

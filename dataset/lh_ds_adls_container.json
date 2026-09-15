@@ -1,7 +1,7 @@
 {
-	"name": "lh_ds_adls_file",
+	"name": "lh_ds_adls_container",
 	"properties": {
-		"description": "Single file in ADLS Gen2 (binary). Sink of the landing copy; also the source/target for inbound moves.",
+		"description": "ADLS Gen2 container root (binary). Folder and file are chosen by wildcards in the Copy activity source (inbound files pushed by OIC / ERP).",
 		"linkedServiceName": {
 			"referenceName": "ls_adls",
 			"type": "LinkedServiceReference"
@@ -10,32 +10,19 @@
 			"container": {
 				"type": "string",
 				"defaultValue": "landing"
-			},
-			"folder": {
-				"type": "string"
-			},
-			"file": {
-				"type": "string"
 			}
 		},
 		"folder": {
 			"name": "lakehouse-retail"
 		},
 		"annotations": [
-			"lakehouse"
+			"lakehouse",
+			"phase-2"
 		],
 		"type": "Binary",
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": {
-					"value": "@dataset().file",
-					"type": "Expression"
-				},
-				"folderPath": {
-					"value": "@dataset().folder",
-					"type": "Expression"
-				},
 				"fileSystem": {
 					"value": "@dataset().container",
 					"type": "Expression"

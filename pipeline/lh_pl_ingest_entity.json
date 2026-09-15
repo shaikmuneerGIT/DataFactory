@@ -1,7 +1,7 @@
 {
 	"name": "lh_pl_ingest_entity",
 	"properties": {
-		"description": "Child pipeline: land + bronze + silver for ONE entity. Routes on entity.source_type (GCS today; ADLS inbound and OIC REST are the phase-2 paths), copies only files newer than the watermark, then runs the Databricks notebooks, advances the watermark and archives the files.",
+		"description": "Child pipeline: land + bronze + silver for ONE entity. Routes on entity.source_type (GCS today; ADLS inbound and OIC REST are the phase-2 paths). Each case is a single wildcard Copy limited to the window [watermark_ts, pipeline_start), so no per-file loop is needed (ADF does not allow a ForEach inside a Switch) and the next run starts exactly where this one ended. Then Databricks bronze, silver, watermark, archive, log.",
 		"activities": [
 			{
 				"name": "Route By Source Type",
@@ -18,246 +18,112 @@
 							"value": "GCS",
 							"activities": [
 								{
-									"name": "List GCS Files",
-									"description": "Lists the entity folder in the bucket. Only files modified after the watermark are returned.",
-									"type": "GetMetadata",
+									"name": "Copy GCS To Landing",
+									"description": "Binary copy of <source_path>/<file_prefix>*<file_extension> modified in [watermark_ts, pipeline_start) into landing/retail/<entity>/<load_id>/. Auto Loader picks the files up from there.",
+									"type": "Copy",
 									"dependsOn": [],
 									"policy": {
-										"timeout": "0.00:30:00",
+										"timeout": "0.02:00:00",
 										"retry": 2,
-										"retryIntervalInSeconds": 30,
+										"retryIntervalInSeconds": 60,
 										"secureOutput": false,
 										"secureInput": false
 									},
-									"userProperties": [],
+									"userProperties": [
+										{
+											"name": "entity",
+											"value": "@{pipeline().parameters.entity.entity_name}"
+										},
+										{
+											"name": "window",
+											"value": "@{pipeline().parameters.entity.watermark_ts} -> @{pipeline().parameters.pipeline_start}"
+										}
+									],
 									"typeProperties": {
-										"dataset": {
-											"referenceName": "lh_ds_gcs_folder",
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "GoogleCloudStorageReadSettings",
+												"recursive": false,
+												"wildcardFolderPath": {
+													"value": "@pipeline().parameters.entity.source_path",
+													"type": "Expression"
+												},
+												"wildcardFileName": {
+													"value": "@concat(pipeline().parameters.entity.file_prefix, '*', pipeline().parameters.entity.file_extension)",
+													"type": "Expression"
+												},
+												"modifiedDatetimeStart": {
+													"value": "@pipeline().parameters.entity.watermark_ts",
+													"type": "Expression"
+												},
+												"modifiedDatetimeEnd": {
+													"value": "@pipeline().parameters.pipeline_start",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "PreserveHierarchy"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "lh_ds_gcs_bucket",
 											"type": "DatasetReference",
 											"parameters": {
 												"bucket": {
 													"value": "@pipeline().parameters.entity.location",
 													"type": "Expression"
-												},
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "lh_ds_adls_folder",
+											"type": "DatasetReference",
+											"parameters": {
+												"container": "landing",
 												"folder": {
-													"value": "@pipeline().parameters.entity.source_path",
+													"value": "@concat(pipeline().parameters.entity.landing_folder, '/', pipeline().parameters.load_id)",
 													"type": "Expression"
 												}
 											}
-										},
-										"fieldList": [
-											"childItems"
-										],
-										"storeSettings": {
-											"type": "GoogleCloudStorageReadSettings",
-											"recursive": false,
-											"modifiedDatetimeStart": {
-												"value": "@pipeline().parameters.entity.watermark_ts",
-												"type": "Expression"
-											},
-											"enablePartitionDiscovery": false
-										},
-										"formatSettings": {
-											"type": "BinaryReadSettings"
 										}
-									}
+									]
 								},
 								{
-									"name": "Filter GCS By Pattern",
-									"description": "Keeps files matching <file_prefix>*<file_extension>; ignores stray files like notes or spreadsheets.",
-									"type": "Filter",
+									"name": "Set GCS Files Copied",
+									"type": "SetVariable",
 									"dependsOn": [
 										{
-											"activity": "List GCS Files",
+											"activity": "Copy GCS To Landing",
 											"dependencyConditions": [
 												"Succeeded"
 											]
 										}
 									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
 									"userProperties": [],
 									"typeProperties": {
-										"items": {
-											"value": "@activity('List GCS Files').output.childItems",
-											"type": "Expression"
-										},
-										"condition": {
-											"value": "@and(equals(item().type, 'File'), and(startswith(item().name, pipeline().parameters.entity.file_prefix), endswith(item().name, pipeline().parameters.entity.file_extension)))",
+										"variableName": "files_copied",
+										"value": {
+											"value": "@string(coalesce(activity('Copy GCS To Landing').output?.filesWritten, 0))",
 											"type": "Expression"
 										}
-									}
-								},
-								{
-									"name": "For Each GCS File",
-									"type": "ForEach",
-									"dependsOn": [
-										{
-											"activity": "Filter GCS By Pattern",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"userProperties": [],
-									"typeProperties": {
-										"items": {
-											"value": "@activity('Filter GCS By Pattern').output.Value",
-											"type": "Expression"
-										},
-										"isSequential": false,
-										"batchCount": 4,
-										"activities": [
-											{
-												"name": "Get GCS File Modified",
-												"type": "GetMetadata",
-												"dependsOn": [],
-												"policy": {
-													"timeout": "0.00:10:00",
-													"retry": 2,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"typeProperties": {
-													"dataset": {
-														"referenceName": "lh_ds_gcs_file",
-														"type": "DatasetReference",
-														"parameters": {
-															"bucket": {
-																"value": "@pipeline().parameters.entity.location",
-																"type": "Expression"
-															},
-															"folder": {
-																"value": "@pipeline().parameters.entity.source_path",
-																"type": "Expression"
-															},
-															"file": {
-																"value": "@item().name",
-																"type": "Expression"
-															}
-														}
-													},
-													"fieldList": [
-														"lastModified",
-														"size"
-													],
-													"storeSettings": {
-														"type": "GoogleCloudStorageReadSettings",
-														"recursive": false,
-														"enablePartitionDiscovery": false
-													},
-													"formatSettings": {
-														"type": "BinaryReadSettings"
-													}
-												}
-											},
-											{
-												"name": "Copy GCS To Landing",
-												"description": "Binary copy into landing/retail/<entity>/<load_id>/<file>. Auto Loader picks it up from there.",
-												"type": "Copy",
-												"dependsOn": [
-													{
-														"activity": "Get GCS File Modified",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													}
-												],
-												"policy": {
-													"timeout": "0.02:00:00",
-													"retry": 2,
-													"retryIntervalInSeconds": 60,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [
-													{
-														"name": "entity",
-														"value": "@{pipeline().parameters.entity.entity_name}"
-													},
-													{
-														"name": "file",
-														"value": "@{item().name}"
-													}
-												],
-												"typeProperties": {
-													"source": {
-														"type": "BinarySource",
-														"storeSettings": {
-															"type": "GoogleCloudStorageReadSettings",
-															"recursive": false
-														},
-														"formatSettings": {
-															"type": "BinaryReadSettings"
-														}
-													},
-													"sink": {
-														"type": "BinarySink",
-														"storeSettings": {
-															"type": "AzureBlobFSWriteSettings"
-														}
-													},
-													"enableStaging": false
-												},
-												"inputs": [
-													{
-														"referenceName": "lh_ds_gcs_file",
-														"type": "DatasetReference",
-														"parameters": {
-															"bucket": {
-																"value": "@pipeline().parameters.entity.location",
-																"type": "Expression"
-															},
-															"folder": {
-																"value": "@pipeline().parameters.entity.source_path",
-																"type": "Expression"
-															},
-															"file": {
-																"value": "@item().name",
-																"type": "Expression"
-															}
-														}
-													}
-												],
-												"outputs": [
-													{
-														"referenceName": "lh_ds_adls_file",
-														"type": "DatasetReference",
-														"parameters": {
-															"container": "landing",
-															"folder": {
-																"value": "@concat(pipeline().parameters.entity.landing_folder, '/', pipeline().parameters.load_id)",
-																"type": "Expression"
-															},
-															"file": {
-																"value": "@item().name",
-																"type": "Expression"
-															}
-														}
-													}
-												]
-											},
-											{
-												"name": "Record GCS Copied File",
-												"type": "AppendVariable",
-												"dependsOn": [
-													{
-														"activity": "Copy GCS To Landing",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													}
-												],
-												"userProperties": [],
-												"typeProperties": {
-													"variableName": "copied_files",
-													"value": {
-														"value": "@json(concat('{\"name\":\"', item().name, '\",\"lastModified\":\"', activity('Get GCS File Modified').output.lastModified, '\",\"size\":', string(activity('Get GCS File Modified').output.size), '}'))",
-														"type": "Expression"
-													}
-												}
-											}
-										]
 									}
 								}
 							]
@@ -266,236 +132,108 @@
 							"value": "ADLS",
 							"activities": [
 								{
-									"name": "List Inbound Files",
-									"description": "Files pushed straight into landing/retail/inbound/<entity>/ by OIC or another integration.",
-									"type": "GetMetadata",
+									"name": "Move Inbound To Landing",
+									"description": "Files pushed by OIC / an ERP integration into landing/retail/inbound/<entity>/ are moved (copy + delete source) into landing/retail/<entity>/<load_id>/.",
+									"type": "Copy",
 									"dependsOn": [],
 									"policy": {
-										"timeout": "0.00:30:00",
+										"timeout": "0.01:00:00",
 										"retry": 2,
-										"retryIntervalInSeconds": 30,
+										"retryIntervalInSeconds": 60,
 										"secureOutput": false,
 										"secureInput": false
 									},
-									"userProperties": [],
+									"userProperties": [
+										{
+											"name": "entity",
+											"value": "@{pipeline().parameters.entity.entity_name}"
+										}
+									],
 									"typeProperties": {
-										"dataset": {
-											"referenceName": "lh_ds_adls_folder",
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": false,
+												"wildcardFolderPath": {
+													"value": "@pipeline().parameters.entity.source_path",
+													"type": "Expression"
+												},
+												"wildcardFileName": {
+													"value": "@concat(pipeline().parameters.entity.file_prefix, '*', pipeline().parameters.entity.file_extension)",
+													"type": "Expression"
+												},
+												"modifiedDatetimeStart": {
+													"value": "@pipeline().parameters.entity.watermark_ts",
+													"type": "Expression"
+												},
+												"modifiedDatetimeEnd": {
+													"value": "@pipeline().parameters.pipeline_start",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": true
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "PreserveHierarchy"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "lh_ds_adls_container",
 											"type": "DatasetReference",
 											"parameters": {
 												"container": {
 													"value": "@pipeline().parameters.entity.location",
 													"type": "Expression"
-												},
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "lh_ds_adls_folder",
+											"type": "DatasetReference",
+											"parameters": {
+												"container": "landing",
 												"folder": {
-													"value": "@pipeline().parameters.entity.source_path",
+													"value": "@concat(pipeline().parameters.entity.landing_folder, '/', pipeline().parameters.load_id)",
 													"type": "Expression"
 												}
 											}
-										},
-										"fieldList": [
-											"childItems"
-										],
-										"storeSettings": {
-											"type": "AzureBlobFSReadSettings",
-											"recursive": false,
-											"modifiedDatetimeStart": {
-												"value": "@pipeline().parameters.entity.watermark_ts",
-												"type": "Expression"
-											},
-											"enablePartitionDiscovery": false
-										},
-										"formatSettings": {
-											"type": "BinaryReadSettings"
 										}
-									}
+									]
 								},
 								{
-									"name": "Filter Inbound By Pattern",
-									"type": "Filter",
+									"name": "Set Inbound Files Copied",
+									"type": "SetVariable",
 									"dependsOn": [
 										{
-											"activity": "List Inbound Files",
+											"activity": "Move Inbound To Landing",
 											"dependencyConditions": [
 												"Succeeded"
 											]
 										}
 									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
 									"userProperties": [],
 									"typeProperties": {
-										"items": {
-											"value": "@activity('List Inbound Files').output.childItems",
-											"type": "Expression"
-										},
-										"condition": {
-											"value": "@and(equals(item().type, 'File'), and(startswith(item().name, pipeline().parameters.entity.file_prefix), endswith(item().name, pipeline().parameters.entity.file_extension)))",
+										"variableName": "files_copied",
+										"value": {
+											"value": "@string(coalesce(activity('Move Inbound To Landing').output?.filesWritten, 0))",
 											"type": "Expression"
 										}
-									}
-								},
-								{
-									"name": "For Each Inbound File",
-									"type": "ForEach",
-									"dependsOn": [
-										{
-											"activity": "Filter Inbound By Pattern",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"userProperties": [],
-									"typeProperties": {
-										"items": {
-											"value": "@activity('Filter Inbound By Pattern').output.Value",
-											"type": "Expression"
-										},
-										"isSequential": false,
-										"batchCount": 4,
-										"activities": [
-											{
-												"name": "Get Inbound File Modified",
-												"type": "GetMetadata",
-												"dependsOn": [],
-												"policy": {
-													"timeout": "0.00:10:00",
-													"retry": 2,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"typeProperties": {
-													"dataset": {
-														"referenceName": "lh_ds_adls_file",
-														"type": "DatasetReference",
-														"parameters": {
-															"container": {
-																"value": "@pipeline().parameters.entity.location",
-																"type": "Expression"
-															},
-															"folder": {
-																"value": "@pipeline().parameters.entity.source_path",
-																"type": "Expression"
-															},
-															"file": {
-																"value": "@item().name",
-																"type": "Expression"
-															}
-														}
-													},
-													"fieldList": [
-														"lastModified",
-														"size"
-													],
-													"storeSettings": {
-														"type": "AzureBlobFSReadSettings",
-														"recursive": false,
-														"enablePartitionDiscovery": false
-													},
-													"formatSettings": {
-														"type": "BinaryReadSettings"
-													}
-												}
-											},
-											{
-												"name": "Move Inbound To Landing",
-												"type": "Copy",
-												"dependsOn": [
-													{
-														"activity": "Get Inbound File Modified",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													}
-												],
-												"policy": {
-													"timeout": "0.01:00:00",
-													"retry": 2,
-													"retryIntervalInSeconds": 60,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"typeProperties": {
-													"source": {
-														"type": "BinarySource",
-														"storeSettings": {
-															"type": "AzureBlobFSReadSettings",
-															"recursive": false,
-															"deleteFilesAfterCompletion": true
-														},
-														"formatSettings": {
-															"type": "BinaryReadSettings"
-														}
-													},
-													"sink": {
-														"type": "BinarySink",
-														"storeSettings": {
-															"type": "AzureBlobFSWriteSettings"
-														}
-													},
-													"enableStaging": false
-												},
-												"inputs": [
-													{
-														"referenceName": "lh_ds_adls_file",
-														"type": "DatasetReference",
-														"parameters": {
-															"container": {
-																"value": "@pipeline().parameters.entity.location",
-																"type": "Expression"
-															},
-															"folder": {
-																"value": "@pipeline().parameters.entity.source_path",
-																"type": "Expression"
-															},
-															"file": {
-																"value": "@item().name",
-																"type": "Expression"
-															}
-														}
-													}
-												],
-												"outputs": [
-													{
-														"referenceName": "lh_ds_adls_file",
-														"type": "DatasetReference",
-														"parameters": {
-															"container": "landing",
-															"folder": {
-																"value": "@concat(pipeline().parameters.entity.landing_folder, '/', pipeline().parameters.load_id)",
-																"type": "Expression"
-															},
-															"file": {
-																"value": "@item().name",
-																"type": "Expression"
-															}
-														}
-													}
-												]
-											},
-											{
-												"name": "Record Inbound Copied File",
-												"type": "AppendVariable",
-												"dependsOn": [
-													{
-														"activity": "Move Inbound To Landing",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													}
-												],
-												"userProperties": [],
-												"typeProperties": {
-													"variableName": "copied_files",
-													"value": {
-														"value": "@json(concat('{\"name\":\"', item().name, '\",\"lastModified\":\"', activity('Get Inbound File Modified').output.lastModified, '\",\"size\":', string(activity('Get Inbound File Modified').output.size), '}'))",
-														"type": "Expression"
-													}
-												}
-											}
-										]
 									}
 								}
 							]
@@ -505,7 +243,7 @@
 							"activities": [
 								{
 									"name": "Extract From OIC",
-									"description": "Phase 2: pull changed records from an OIC integration (REST, paginated) into a JSON file in landing.",
+									"description": "Phase 2: pull records changed since the watermark from an OIC REST integration (paginated) into a JSON file in landing.",
 									"type": "Copy",
 									"dependsOn": [],
 									"policy": {
@@ -547,7 +285,7 @@
 											"type": "DatasetReference",
 											"parameters": {
 												"relativeUrl": {
-													"value": "@concat(pipeline().parameters.entity.source_path, '?updatedSince=', pipeline().parameters.entity.watermark_ts)",
+													"value": "@concat(pipeline().parameters.entity.source_path, '?updatedSince=', pipeline().parameters.entity.watermark_ts, '&updatedBefore=', pipeline().parameters.pipeline_start)",
 													"type": "Expression"
 												}
 											}
@@ -572,8 +310,8 @@
 									]
 								},
 								{
-									"name": "Record OIC Extract",
-									"type": "AppendVariable",
+									"name": "Set OIC Rows Copied",
+									"type": "SetVariable",
 									"dependsOn": [
 										{
 											"activity": "Extract From OIC",
@@ -582,11 +320,15 @@
 											]
 										}
 									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
 									"userProperties": [],
 									"typeProperties": {
-										"variableName": "copied_files",
+										"variableName": "files_copied",
 										"value": {
-											"value": "@json(concat('{\"name\":\"oic-rest-extract\",\"lastModified\":\"', pipeline().parameters.pipeline_start, '\",\"rowsCopied\":', string(activity('Extract From OIC').output.rowsCopied), '}'))",
+											"value": "@concat('rest rows ', string(coalesce(activity('Extract From OIC').output?.rowsCopied, 0)))",
 											"type": "Expression"
 										}
 									}
@@ -708,7 +450,7 @@
 			},
 			{
 				"name": "Update Watermark",
-				"description": "Watermark = newest lastModified of the copied files (or the pipeline start when nothing was copied).",
+				"description": "Watermark = pipeline_start, the exclusive upper bound of this run's copy window, so the next run continues exactly where this one stopped. Only reached after silver succeeded.",
 				"type": "DatabricksNotebook",
 				"dependsOn": [
 					{
@@ -737,11 +479,7 @@
 							"value": "@pipeline().parameters.entity.entity_name",
 							"type": "Expression"
 						},
-						"files_json": {
-							"value": "@string(variables('copied_files'))",
-							"type": "Expression"
-						},
-						"fallback_ts": {
+						"watermark_ts": {
 							"value": "@pipeline().parameters.pipeline_start",
 							"type": "Expression"
 						},
@@ -851,7 +589,7 @@
 							"type": "Expression"
 						},
 						"message": {
-							"value": "@concat('files=', string(length(variables('copied_files'))), ' bronze=', string(activity('Bronze Ingest').output.runOutput.rows_ingested), ' watermark=', activity('Update Watermark').output.runOutput.watermark_ts)",
+							"value": "@concat('files=', variables('files_copied'), ' bronze=', string(activity('Bronze Ingest').output.runOutput.rows_ingested), ' watermark=', activity('Update Watermark').output.runOutput.watermark_ts)",
 							"type": "Expression"
 						},
 						"trigger_type": {
@@ -893,8 +631,9 @@
 			}
 		},
 		"variables": {
-			"copied_files": {
-				"type": "Array"
+			"files_copied": {
+				"type": "String",
+				"defaultValue": "0"
 			}
 		},
 		"folder": {

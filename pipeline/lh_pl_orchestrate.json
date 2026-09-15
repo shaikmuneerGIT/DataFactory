@@ -1,7 +1,7 @@
 {
 	"name": "lh_pl_orchestrate",
 	"properties": {
-		"description": "Core orchestration: read the run plan from the control table, ingest every entity (child pipeline, sequential so dimensions land before facts), then gold, AI enrichment, run report and success notification. Failures bubble up to lh_pl_master, which owns the failure alert.",
+		"description": "Core orchestration: read the run plan from the control table, ingest every entity (child pipeline, sequential so dimensions land before facts; after the first failure the remaining entities are logged as SKIPPED instead of loaded), then gold, AI enrichment, run report and success notification. Failures bubble up to lh_pl_master, which owns the failure alert.",
 		"activities": [
 			{
 				"name": "Get Run Plan",
@@ -44,6 +44,7 @@
 			},
 			{
 				"name": "Set Run Plan",
+				"description": "A notebook exit value that is valid JSON arrives already parsed: runOutput is the array itself.",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -102,7 +103,7 @@
 			},
 			{
 				"name": "For Each Entity",
-				"description": "Sequential on purpose: customers and products must be in silver before orders (FK rules) and order_items.",
+				"description": "Sequential on purpose: customers and products must be in silver before orders (FK rules) and order_items. A ForEach never stops by itself, so a failure sets failed_entity and later iterations take the skip branch.",
 				"type": "ForEach",
 				"dependsOn": [
 					{
@@ -121,130 +122,222 @@
 					"isSequential": true,
 					"activities": [
 						{
-							"name": "Run Ingest Entity",
-							"type": "ExecutePipeline",
+							"name": "Unless Earlier Failure",
+							"type": "IfCondition",
 							"dependsOn": [],
-							"policy": {
-								"secureInput": false
-							},
-							"userProperties": [
-								{
-									"name": "entity",
-									"value": "@{item().entity_name}"
-								}
-							],
-							"typeProperties": {
-								"pipeline": {
-									"referenceName": "lh_pl_ingest_entity",
-									"type": "PipelineReference"
-								},
-								"waitOnCompletion": true,
-								"parameters": {
-									"entity": {
-										"value": "@item()",
-										"type": "Expression"
-									},
-									"load_id": {
-										"value": "@pipeline().parameters.load_id",
-										"type": "Expression"
-									},
-									"catalog": {
-										"value": "@pipeline().parameters.catalog",
-										"type": "Expression"
-									},
-									"env": {
-										"value": "@pipeline().parameters.env",
-										"type": "Expression"
-									},
-									"trigger_type": {
-										"value": "@pipeline().TriggerType",
-										"type": "Expression"
-									},
-									"pipeline_start": {
-										"value": "@pipeline().parameters.pipeline_start",
-										"type": "Expression"
-									}
-								}
-							}
-						},
-						{
-							"name": "Log Entity Failure",
-							"type": "DatabricksNotebook",
-							"dependsOn": [
-								{
-									"activity": "Run Ingest Entity",
-									"dependencyConditions": [
-										"Failed"
-									]
-								}
-							],
-							"policy": {
-								"timeout": "0.00:30:00",
-								"retry": 1,
-								"retryIntervalInSeconds": 60,
-								"secureOutput": false,
-								"secureInput": false
-							},
 							"userProperties": [],
 							"typeProperties": {
-								"notebookPath": "/lakehouse/retail/50_ops/log_run",
-								"baseParameters": {
-									"catalog": {
-										"value": "@pipeline().parameters.catalog",
-										"type": "Expression"
-									},
-									"load_id": {
-										"value": "@pipeline().parameters.load_id",
-										"type": "Expression"
-									},
-									"run_id": {
-										"value": "@pipeline().RunId",
-										"type": "Expression"
-									},
-									"pipeline_name": {
-										"value": "@pipeline().Pipeline",
-										"type": "Expression"
-									},
-									"entity_name": {
-										"value": "@item().entity_name",
-										"type": "Expression"
-									},
-									"layer": "entity",
-									"status": "FAILED",
-									"message": {
-										"value": "@activity('Run Ingest Entity').error.message",
-										"type": "Expression"
-									},
-									"trigger_type": {
-										"value": "@pipeline().TriggerType",
-										"type": "Expression"
-									}
-								}
-							},
-							"linkedServiceName": {
-								"referenceName": "ls_databricks_compute",
-								"type": "LinkedServiceReference"
-							}
-						},
-						{
-							"name": "Fail Entity",
-							"description": "Re-raise after logging, otherwise the successful log step would mask the failure.",
-							"type": "Fail",
-							"dependsOn": [
-								{
-									"activity": "Log Entity Failure",
-									"dependencyConditions": [
-										"Completed"
-									]
-								}
-							],
-							"userProperties": [],
-							"typeProperties": {
-								"message": {
-									"value": "@concat('Entity ', item().entity_name, ' failed: ', activity('Run Ingest Entity').error.message)",
+								"expression": {
+									"value": "@empty(variables('failed_entity'))",
 									"type": "Expression"
 								},
-								"errorCode": "ENTITY_FAILED"
+								"ifTrueActivities": [
+									{
+										"name": "Run Ingest Entity",
+										"type": "ExecutePipeline",
+										"dependsOn": [],
+										"policy": {
+											"secureInput": false
+										},
+										"userProperties": [
+											{
+												"name": "entity",
+												"value": "@{item().entity_name}"
+											}
+										],
+										"typeProperties": {
+											"pipeline": {
+												"referenceName": "lh_pl_ingest_entity",
+												"type": "PipelineReference"
+											},
+											"waitOnCompletion": true,
+											"parameters": {
+												"entity": {
+													"value": "@item()",
+													"type": "Expression"
+												},
+												"load_id": {
+													"value": "@pipeline().parameters.load_id",
+													"type": "Expression"
+												},
+												"catalog": {
+													"value": "@pipeline().parameters.catalog",
+													"type": "Expression"
+												},
+												"env": {
+													"value": "@pipeline().parameters.env",
+													"type": "Expression"
+												},
+												"trigger_type": {
+													"value": "@pipeline().TriggerType",
+													"type": "Expression"
+												},
+												"pipeline_start": {
+													"value": "@pipeline().parameters.pipeline_start",
+													"type": "Expression"
+												}
+											}
+										}
+									},
+									{
+										"name": "Log Entity Failure",
+										"type": "DatabricksNotebook",
+										"dependsOn": [
+											{
+												"activity": "Run Ingest Entity",
+												"dependencyConditions": [
+													"Failed"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.00:30:00",
+											"retry": 1,
+											"retryIntervalInSeconds": 60,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"notebookPath": "/lakehouse/retail/50_ops/log_run",
+											"baseParameters": {
+												"catalog": {
+													"value": "@pipeline().parameters.catalog",
+													"type": "Expression"
+												},
+												"load_id": {
+													"value": "@pipeline().parameters.load_id",
+													"type": "Expression"
+												},
+												"run_id": {
+													"value": "@pipeline().RunId",
+													"type": "Expression"
+												},
+												"pipeline_name": {
+													"value": "@pipeline().Pipeline",
+													"type": "Expression"
+												},
+												"entity_name": {
+													"value": "@item().entity_name",
+													"type": "Expression"
+												},
+												"layer": "entity",
+												"status": "FAILED",
+												"message": {
+													"value": "@activity('Run Ingest Entity').error.message",
+													"type": "Expression"
+												},
+												"trigger_type": {
+													"value": "@pipeline().TriggerType",
+													"type": "Expression"
+												}
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "ls_databricks_compute",
+											"type": "LinkedServiceReference"
+										}
+									},
+									{
+										"name": "Mark Entity Failed",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "Log Entity Failure",
+												"dependencyConditions": [
+													"Completed"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "failed_entity",
+											"value": {
+												"value": "@item().entity_name",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "Fail Entity",
+										"description": "Re-raise after logging, otherwise the successful log step would mask the failure.",
+										"type": "Fail",
+										"dependsOn": [
+											{
+												"activity": "Mark Entity Failed",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"message": {
+												"value": "@concat('Entity ', item().entity_name, ' failed: ', activity('Run Ingest Entity').error.message)",
+												"type": "Expression"
+											},
+											"errorCode": "ENTITY_FAILED"
+										}
+									}
+								],
+								"ifFalseActivities": [
+									{
+										"name": "Log Entity Skipped",
+										"type": "DatabricksNotebook",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.00:30:00",
+											"retry": 1,
+											"retryIntervalInSeconds": 60,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"notebookPath": "/lakehouse/retail/50_ops/log_run",
+											"baseParameters": {
+												"catalog": {
+													"value": "@pipeline().parameters.catalog",
+													"type": "Expression"
+												},
+												"load_id": {
+													"value": "@pipeline().parameters.load_id",
+													"type": "Expression"
+												},
+												"run_id": {
+													"value": "@pipeline().RunId",
+													"type": "Expression"
+												},
+												"pipeline_name": {
+													"value": "@pipeline().Pipeline",
+													"type": "Expression"
+												},
+												"entity_name": {
+													"value": "@item().entity_name",
+													"type": "Expression"
+												},
+												"layer": "entity",
+												"status": "SKIPPED",
+												"message": {
+													"value": "@concat('not loaded because ', variables('failed_entity'), ' failed earlier in this run; watermark unchanged, the next run picks the files up')",
+													"type": "Expression"
+												},
+												"trigger_type": {
+													"value": "@pipeline().TriggerType",
+													"type": "Expression"
+												}
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "ls_databricks_compute",
+											"type": "LinkedServiceReference"
+										}
+									}
+								]
 							}
 						}
 					]
@@ -469,6 +562,10 @@
 		"variables": {
 			"run_plan": {
 				"type": "Array"
+			},
+			"failed_entity": {
+				"type": "String",
+				"defaultValue": ""
 			}
 		},
 		"folder": {
