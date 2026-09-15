@@ -1,0 +1,40 @@
+{
+	"name": "lh_ds_adls_folder",
+	"properties": {
+		"description": "Folder in ADLS Gen2 (binary, parameterised container + folder). Used to list inbound files pushed by OIC/ERP.",
+		"linkedServiceName": {
+			"referenceName": "ls_adls",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"folder": {
+				"type": "string",
+				"defaultValue": "retail/inbound/customers"
+			}
+		},
+		"folder": {
+			"name": "lakehouse-retail"
+		},
+		"annotations": [
+			"lakehouse"
+		],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@dataset().folder",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().container",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

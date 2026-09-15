@@ -1,0 +1,30 @@
+{
+	"name": "lh_ds_oic_rest",
+	"properties": {
+		"description": "REST resource on Oracle Integration Cloud (phase 2). relativeUrl = integration flow path + query (e.g. /RETAIL_CUSTOMERS/1.0/customers?updatedSince=...).",
+		"linkedServiceName": {
+			"referenceName": "lh_ls_oic_rest",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"relativeUrl": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "lakehouse-retail"
+		},
+		"annotations": [
+			"lakehouse",
+			"phase-2"
+		],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": {
+				"value": "@dataset().relativeUrl",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	}
+}

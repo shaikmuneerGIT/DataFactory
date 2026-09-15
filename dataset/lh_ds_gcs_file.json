@@ -1,0 +1,46 @@
+{
+	"name": "lh_ds_gcs_file",
+	"properties": {
+		"description": "Single file in the GCS bucket (binary). Source of the binary copy into ADLS landing.",
+		"linkedServiceName": {
+			"referenceName": "ls_gcp",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"bucket": {
+				"type": "string",
+				"defaultValue": "csgcpstorage_muneer"
+			},
+			"folder": {
+				"type": "string"
+			},
+			"file": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "lakehouse-retail"
+		},
+		"annotations": [
+			"lakehouse"
+		],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "GoogleCloudStorageLocation",
+				"bucketName": {
+					"value": "@dataset().bucket",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().folder",
+					"type": "Expression"
+				},
+				"fileName": {
+					"value": "@dataset().file",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

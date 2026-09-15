@@ -1,0 +1,39 @@
+{
+	"name": "lh_tr_daily",
+	"properties": {
+		"description": "Daily batch at 01:30 IST. Created STOPPED: start it only while the Databricks cluster session is on (it auto-starts the cluster otherwise, which needs the NAT gateway).",
+		"annotations": [
+			"lakehouse"
+		],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "lh_pl_master",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"source_system": "GCS",
+					"run_group": "daily"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2026-09-16T01:30:00",
+				"timeZone": "India Standard Time",
+				"schedule": {
+					"minutes": [
+						30
+					],
+					"hours": [
+						1
+					]
+				}
+			}
+		}
+	}
+}

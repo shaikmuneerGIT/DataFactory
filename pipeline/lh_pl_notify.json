@@ -1,0 +1,113 @@
+{
+	"name": "lh_pl_notify",
+	"properties": {
+		"description": "Sends a run notification. The alert endpoint (Logic App HTTP trigger URL) is read from Key Vault secret 'lh-alert-url' with the factory's managed identity, so no URL or key lives in Git. Set parameter enabled=false to skip.",
+		"activities": [
+			{
+				"name": "If Enabled",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(toLower(pipeline().parameters.enabled), 'true')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Get Alert Url",
+							"description": "GET the secret with MSI (Key Vault access policy: get on secrets).",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.00:05:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": true,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"url": "https://cs-keyvault-muneer.vault.azure.net/secrets/lh-alert-url?api-version=7.4",
+								"authentication": {
+									"type": "MSI",
+									"resource": "https://vault.azure.net"
+								}
+							}
+						},
+						{
+							"name": "Post Alert",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "Get Alert Url",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.00:05:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": true
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "POST",
+								"headers": {
+									"Content-Type": "application/json"
+								},
+								"url": {
+									"value": "@activity('Get Alert Url').output.value",
+									"type": "Expression"
+								},
+								"body": {
+									"value": "@createObject('status', pipeline().parameters.status, 'subject', pipeline().parameters.subject, 'body_html', pipeline().parameters.body_html, 'load_id', pipeline().parameters.load_id, 'pipeline', pipeline().parameters.pipeline_name, 'factory', pipeline().DataFactory, 'sent_at', utcNow())",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"policy": {
+			"elapsedTimeMetric": {}
+		},
+		"parameters": {
+			"status": {
+				"type": "string",
+				"defaultValue": "SUCCESS"
+			},
+			"subject": {
+				"type": "string",
+				"defaultValue": "Lakehouse run"
+			},
+			"body_html": {
+				"type": "string",
+				"defaultValue": ""
+			},
+			"load_id": {
+				"type": "string",
+				"defaultValue": ""
+			},
+			"pipeline_name": {
+				"type": "string",
+				"defaultValue": ""
+			},
+			"enabled": {
+				"type": "string",
+				"defaultValue": "true"
+			}
+		},
+		"folder": {
+			"name": "lakehouse-retail"
+		},
+		"annotations": [
+			"lakehouse"
+		]
+	}
+}

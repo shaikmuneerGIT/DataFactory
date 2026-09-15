@@ -1,0 +1,481 @@
+{
+	"name": "lh_pl_orchestrate",
+	"properties": {
+		"description": "Core orchestration: read the run plan from the control table, ingest every entity (child pipeline, sequential so dimensions land before facts), then gold, AI enrichment, run report and success notification. Failures bubble up to lh_pl_master, which owns the failure alert.",
+		"activities": [
+			{
+				"name": "Get Run Plan",
+				"description": "Active entities of active sources, ordered by priority, with watermarks - from retail_ops.ctl_entity.",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.01:00:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 120,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/lakehouse/retail/10_ingest/get_run_plan",
+					"baseParameters": {
+						"catalog": {
+							"value": "@pipeline().parameters.catalog",
+							"type": "Expression"
+						},
+						"source_system": {
+							"value": "@pipeline().parameters.source_system",
+							"type": "Expression"
+						},
+						"run_group": {
+							"value": "@pipeline().parameters.run_group",
+							"type": "Expression"
+						},
+						"entities": {
+							"value": "@pipeline().parameters.entities",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_compute",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Set Run Plan",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get Run Plan",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_plan",
+					"value": {
+						"value": "@json(activity('Get Run Plan').output.runOutput)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Has Entities",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set Run Plan",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(length(variables('run_plan')), 0)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "No Entities",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat('No active entities for source_system=', pipeline().parameters.source_system, ' run_group=', pipeline().parameters.run_group, ' entities=', pipeline().parameters.entities)",
+									"type": "Expression"
+								},
+								"errorCode": "NO_ENTITIES"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "For Each Entity",
+				"description": "Sequential on purpose: customers and products must be in silver before orders (FK rules) and order_items.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Has Entities",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('run_plan')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Run Ingest Entity",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "entity",
+									"value": "@{item().entity_name}"
+								}
+							],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "lh_pl_ingest_entity",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"entity": {
+										"value": "@item()",
+										"type": "Expression"
+									},
+									"load_id": {
+										"value": "@pipeline().parameters.load_id",
+										"type": "Expression"
+									},
+									"catalog": {
+										"value": "@pipeline().parameters.catalog",
+										"type": "Expression"
+									},
+									"env": {
+										"value": "@pipeline().parameters.env",
+										"type": "Expression"
+									},
+									"trigger_type": {
+										"value": "@pipeline().TriggerType",
+										"type": "Expression"
+									},
+									"pipeline_start": {
+										"value": "@pipeline().parameters.pipeline_start",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Log Entity Failure",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Run Ingest Entity",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.00:30:00",
+								"retry": 1,
+								"retryIntervalInSeconds": 60,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/lakehouse/retail/50_ops/log_run",
+								"baseParameters": {
+									"catalog": {
+										"value": "@pipeline().parameters.catalog",
+										"type": "Expression"
+									},
+									"load_id": {
+										"value": "@pipeline().parameters.load_id",
+										"type": "Expression"
+									},
+									"run_id": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"pipeline_name": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"entity_name": {
+										"value": "@item().entity_name",
+										"type": "Expression"
+									},
+									"layer": "entity",
+									"status": "FAILED",
+									"message": {
+										"value": "@activity('Run Ingest Entity').error.message",
+										"type": "Expression"
+									},
+									"trigger_type": {
+										"value": "@pipeline().TriggerType",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_databricks_compute",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Fail Entity",
+							"description": "Re-raise after logging, otherwise the successful log step would mask the failure.",
+							"type": "Fail",
+							"dependsOn": [
+								{
+									"activity": "Log Entity Failure",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat('Entity ', item().entity_name, ' failed: ', activity('Run Ingest Entity').error.message)",
+									"type": "Expression"
+								},
+								"errorCode": "ENTITY_FAILED"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Build Gold",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "For Each Entity",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.02:00:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 120,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/lakehouse/retail/30_gold/build_gold",
+					"baseParameters": {
+						"catalog": {
+							"value": "@pipeline().parameters.catalog",
+							"type": "Expression"
+						},
+						"load_id": {
+							"value": "@pipeline().parameters.load_id",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_compute",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "AI Enrich",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "Build Gold",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.02:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/lakehouse/retail/40_ai/ai_enrich",
+					"baseParameters": {
+						"catalog": {
+							"value": "@pipeline().parameters.catalog",
+							"type": "Expression"
+						},
+						"load_id": {
+							"value": "@pipeline().parameters.load_id",
+							"type": "Expression"
+						},
+						"ai_mode": {
+							"value": "@pipeline().parameters.ai_mode",
+							"type": "Expression"
+						},
+						"enable_llm": {
+							"value": "@pipeline().parameters.enable_llm",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_compute",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Run Report",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "AI Enrich",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/lakehouse/retail/50_ops/dq_report",
+					"baseParameters": {
+						"catalog": {
+							"value": "@pipeline().parameters.catalog",
+							"type": "Expression"
+						},
+						"load_id": {
+							"value": "@pipeline().parameters.load_id",
+							"type": "Expression"
+						},
+						"pipeline_name": {
+							"value": "@pipeline().Pipeline",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_compute",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Notify Success",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Run Report",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "lh_pl_notify",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"status": {
+							"value": "@json(activity('Run Report').output.runOutput).overall",
+							"type": "Expression"
+						},
+						"subject": {
+							"value": "@json(activity('Run Report').output.runOutput).subject",
+							"type": "Expression"
+						},
+						"body_html": {
+							"value": "@json(activity('Run Report').output.runOutput).body_html",
+							"type": "Expression"
+						},
+						"load_id": {
+							"value": "@pipeline().parameters.load_id",
+							"type": "Expression"
+						},
+						"pipeline_name": {
+							"value": "@pipeline().Pipeline",
+							"type": "Expression"
+						},
+						"enabled": {
+							"value": "@pipeline().parameters.notify",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"policy": {
+			"elapsedTimeMetric": {}
+		},
+		"parameters": {
+			"load_id": {
+				"type": "string"
+			},
+			"pipeline_start": {
+				"type": "string"
+			},
+			"catalog": {
+				"type": "string",
+				"defaultValue": "cs_databricks_muneer"
+			},
+			"env": {
+				"type": "string",
+				"defaultValue": "dev"
+			},
+			"source_system": {
+				"type": "string",
+				"defaultValue": "ALL"
+			},
+			"run_group": {
+				"type": "string",
+				"defaultValue": "daily"
+			},
+			"entities": {
+				"type": "string",
+				"defaultValue": ""
+			},
+			"ai_mode": {
+				"type": "string",
+				"defaultValue": "auto"
+			},
+			"enable_llm": {
+				"type": "string",
+				"defaultValue": "false"
+			},
+			"notify": {
+				"type": "string",
+				"defaultValue": "true"
+			}
+		},
+		"variables": {
+			"run_plan": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "lakehouse-retail"
+		},
+		"annotations": [
+			"lakehouse"
+		]
+	}
+}

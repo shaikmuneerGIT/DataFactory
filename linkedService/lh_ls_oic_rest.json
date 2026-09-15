@@ -1,0 +1,45 @@
+{
+	"name": "lh_ls_oic_rest",
+	"properties": {
+		"description": "Oracle Integration Cloud REST (phase 2 source). OAuth2 client-credentials against Oracle IDCS; the client secret comes from Key Vault secret 'oic-client-secret'. Replace the placeholder parameter defaults when the OIC instance exists.",
+		"parameters": {
+			"baseUrl": {
+				"type": "string",
+				"defaultValue": "https://oic-placeholder.integration.ocp.oraclecloud.com/ic/api/integration/v1/flows/rest"
+			},
+			"clientId": {
+				"type": "string",
+				"defaultValue": "replace-with-idcs-client-id"
+			},
+			"tokenEndpoint": {
+				"type": "string",
+				"defaultValue": "https://idcs-placeholder.identity.oraclecloud.com/oauth2/v1/token"
+			},
+			"scope": {
+				"type": "string",
+				"defaultValue": "urn:opc:resource:consumer::all"
+			}
+		},
+		"annotations": [
+			"lakehouse",
+			"phase-2"
+		],
+		"type": "RestService",
+		"typeProperties": {
+			"url": "@{linkedService().baseUrl}",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "OAuth2ClientCredential",
+			"clientId": "@{linkedService().clientId}",
+			"clientSecret": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_AzurekeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "oic-client-secret"
+			},
+			"tokenEndpoint": "@{linkedService().tokenEndpoint}",
+			"scope": "@{linkedService().scope}"
+		}
+	}
+}

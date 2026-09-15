@@ -1,0 +1,33 @@
+{
+	"name": "lh_tr_inbound_event",
+	"properties": {
+		"description": "Event-driven (near real-time) path: an upstream system (OIC / ERP) drops its files under landing/retail/inbound/<entity>/ and finishes with a <anything>.done marker; the BlobCreated event starts lh_pl_master for the ADLS source. Needs the Microsoft.EventGrid provider registered on the subscription. Created STOPPED.",
+		"annotations": [
+			"lakehouse",
+			"phase-2"
+		],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "lh_pl_master",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"source_system": "ADLS",
+					"run_group": "daily"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/landing/blobs/retail/inbound/",
+			"blobPathEndsWith": ".done",
+			"ignoreEmptyBlobs": false,
+			"scope": "/subscriptions/10b7fd1b-a969-406c-bd79-380373dad3ee/resourceGroups/test/providers/Microsoft.Storage/storageAccounts/testmuneerstoarge",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}
