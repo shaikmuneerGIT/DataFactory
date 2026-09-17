@@ -57,6 +57,10 @@
 						"notify": {
 							"value": "@pipeline().parameters.notify",
 							"type": "Expression"
+						},
+						"notebook_root": {
+							"value": "@pipeline().parameters.notebook_root",
+							"type": "Expression"
 						}
 					}
 				}
@@ -81,7 +85,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/50_ops/log_run",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/50_ops/log_run')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -222,6 +229,10 @@
 			"notify": {
 				"type": "string",
 				"defaultValue": "true"
+			},
+			"notebook_root": {
+				"type": "string",
+				"defaultValue": "/Workspace/lakehouse/dev/notebooks"
 			}
 		},
 		"folder": {

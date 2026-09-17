@@ -8,10 +8,6 @@
 			"authentication": "MSI",
 			"workspaceResourceId": "/subscriptions/10b7fd1b-a969-406c-bd79-380373dad3ee/resourceGroups/test/providers/Microsoft.Databricks/workspaces/cs-databricks-muneer",
 			"existingClusterId": "0908-141245-3rcoj6oy"
-		},
-		"connectVia": {
-			"referenceName": "shir-telecom",
-			"type": "IntegrationRuntimeReference"
 		}
 	}
 }

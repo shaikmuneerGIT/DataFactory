@@ -17,7 +17,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/10_ingest/get_run_plan",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/10_ingest/get_run_plan')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -175,6 +178,10 @@
 												"pipeline_start": {
 													"value": "@pipeline().parameters.pipeline_start",
 													"type": "Expression"
+												},
+												"notebook_root": {
+													"value": "@pipeline().parameters.notebook_root",
+													"type": "Expression"
 												}
 											}
 										}
@@ -199,7 +206,10 @@
 										},
 										"userProperties": [],
 										"typeProperties": {
-											"notebookPath": "/lakehouse/retail/50_ops/log_run",
+											"notebookPath": {
+												"value": "@concat(pipeline().parameters.notebook_root, '/50_ops/log_run')",
+												"type": "Expression"
+											},
 											"baseParameters": {
 												"catalog": {
 													"value": "@pipeline().parameters.catalog",
@@ -298,7 +308,10 @@
 										},
 										"userProperties": [],
 										"typeProperties": {
-											"notebookPath": "/lakehouse/retail/50_ops/log_run",
+											"notebookPath": {
+												"value": "@concat(pipeline().parameters.notebook_root, '/50_ops/log_run')",
+												"type": "Expression"
+											},
 											"baseParameters": {
 												"catalog": {
 													"value": "@pipeline().parameters.catalog",
@@ -363,7 +376,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/30_gold/build_gold",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/30_gold/build_gold')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -400,7 +416,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/40_ai/ai_enrich",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/40_ai/ai_enrich')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -445,7 +464,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/50_ops/dq_report",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/50_ops/dq_report')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -557,6 +579,10 @@
 			"notify": {
 				"type": "string",
 				"defaultValue": "true"
+			},
+			"notebook_root": {
+				"type": "string",
+				"defaultValue": "/Workspace/lakehouse/dev/notebooks"
 			}
 		},
 		"variables": {

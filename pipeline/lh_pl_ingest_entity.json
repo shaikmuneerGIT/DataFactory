@@ -379,7 +379,10 @@
 					}
 				],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/10_ingest/bronze_ingest",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/10_ingest/bronze_ingest')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -427,7 +430,10 @@
 					}
 				],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/20_silver/silver_transform",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/20_silver/silver_transform')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -469,7 +475,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/50_ops/update_watermark",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/50_ops/update_watermark')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -511,7 +520,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/50_ops/archive_landing_files",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/50_ops/archive_landing_files')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -552,7 +564,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/lakehouse/retail/50_ops/log_run",
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.notebook_root, '/50_ops/log_run')",
+						"type": "Expression"
+					},
 					"baseParameters": {
 						"catalog": {
 							"value": "@pipeline().parameters.catalog",
@@ -628,6 +643,10 @@
 			},
 			"pipeline_start": {
 				"type": "string"
+			},
+			"notebook_root": {
+				"type": "string",
+				"defaultValue": "/Workspace/lakehouse/dev/notebooks"
 			}
 		},
 		"variables": {
