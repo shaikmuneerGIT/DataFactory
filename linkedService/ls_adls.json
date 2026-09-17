@@ -5,10 +5,6 @@
 		"type": "AzureBlobFS",
 		"typeProperties": {
 			"url": "https://testmuneerstoarge.dfs.core.windows.net/"
-		},
-		"connectVia": {
-			"referenceName": "shir-telecom",
-			"type": "IntegrationRuntimeReference"
 		}
 	}
 }

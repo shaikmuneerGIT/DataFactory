@@ -14,10 +14,6 @@
 				},
 				"secretName": "gcp-secret"
 			}
-		},
-		"connectVia": {
-			"referenceName": "shir-telecom",
-			"type": "IntegrationRuntimeReference"
 		}
 	},
 	"type": "Microsoft.DataFactory/factories/linkedservices"
