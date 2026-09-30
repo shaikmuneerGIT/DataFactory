@@ -1,0 +1,40 @@
+{
+	"name": "lh_ds_fabric_files",
+	"properties": {
+		"description": "One file in the Files area of the Fabric lakehouse lh_retail (binary; folder + file relative to Files/). Sink of the MDM customer event copy.",
+		"linkedServiceName": {
+			"referenceName": "lh_ls_fabric_lakehouse",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"folder": {
+				"type": "string",
+				"defaultValue": "mdm/customers/inbound"
+			},
+			"file": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "lakehouse-retail"
+		},
+		"annotations": [
+			"lakehouse",
+			"mdm"
+		],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "LakehouseLocation",
+				"fileName": {
+					"value": "@dataset().file",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().folder",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

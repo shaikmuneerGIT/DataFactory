@@ -1,0 +1,27 @@
+{
+	"name": "lh_ls_fabric_lakehouse",
+	"properties": {
+		"description": "Microsoft Fabric lakehouse lh_retail (workspace lh_retail_dev), Files area. Authenticates as service principal spn_adb_to_adls (secret from Key Vault 'spn-secret'); the principal must be a Contributor of the Fabric workspace and the tenant setting 'Service principals can call Fabric public APIs' must be on. Used by the MDM customer path (lh_pl_mdm_customer_to_fabric).",
+		"annotations": [
+			"lakehouse",
+			"mdm"
+		],
+		"type": "Lakehouse",
+		"typeProperties": {
+			"workspaceId": "7d6cf283-5e16-4271-a2c7-d1494b49695f",
+			"artifactId": "0a72b148-0699-44d7-b56d-3f5c71eae831",
+			"rootFolder": "Files",
+			"tenant": "70d48915-9aaa-460f-9616-a32e05fd1a74",
+			"servicePrincipalId": "fb54154b-f3d6-4c9f-a7e4-f484898ded7e",
+			"servicePrincipalCredentialType": "ServicePrincipalKey",
+			"servicePrincipalCredential": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_AzurekeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "spn-secret"
+			}
+		}
+	}
+}
