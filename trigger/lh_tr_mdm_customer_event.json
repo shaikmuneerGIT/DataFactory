@@ -1,7 +1,7 @@
 {
 	"name": "lh_tr_mdm_customer_event",
 	"properties": {
-		"description": "MDM -> Fabric near-real-time path: OIC (scope PUBLISH_TO_LAKE of MDM_CUSTOMER_TO_FUSION) writes landing/mdm/customers/inbound/yyyy/MM/dd/<mdmCustomerId>-<ts>.json after the customer exists in Fusion; the BlobCreated event runs lh_pl_mdm_customer_to_fabric for that one file. Created STOPPED; start it once the Fabric capacity is on and the service principal is a Contributor of the workspace.",
+		"description": "MDM -> Fabric near-real-time path: OIC (scope PUBLISH_TO_LAKE of MDM_CUSTOMER_TO_FUSION) writes, in storage account oicmdmlandingmuneer, landing/mdm/customers/inbound/yyyy/MM/dd/<mdmCustomerId>-<ts>.json after the customer exists in Fusion; the BlobCreated event runs lh_pl_mdm_customer_to_fabric for that one file. Created STOPPED; start it once the Fabric capacity is on and the service principal is a Contributor of the workspace.",
 		"annotations": [
 			"lakehouse",
 			"mdm"
@@ -25,7 +25,7 @@
 			"blobPathBeginsWith": "/landing/blobs/mdm/customers/inbound/",
 			"blobPathEndsWith": ".json",
 			"ignoreEmptyBlobs": true,
-			"scope": "/subscriptions/10b7fd1b-a969-406c-bd79-380373dad3ee/resourceGroups/test/providers/Microsoft.Storage/storageAccounts/testmuneerstoarge",
+			"scope": "/subscriptions/10b7fd1b-a969-406c-bd79-380373dad3ee/resourceGroups/test/providers/Microsoft.Storage/storageAccounts/oicmdmlandingmuneer",
 			"events": [
 				"Microsoft.Storage.BlobCreated"
 			]

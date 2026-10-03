@@ -1,9 +1,9 @@
 {
 	"name": "lh_ds_adls_file",
 	"properties": {
-		"description": "One file in ADLS Gen2 (binary; container + folder + file). Source of the MDM customer event copy to Fabric.",
+		"description": "One file in the OIC landing account oicmdmlandingmuneer (ADLS Gen2; container + folder + file, binary). Source of the MDM customer event copy to Fabric.",
 		"linkedServiceName": {
-			"referenceName": "ls_adls",
+			"referenceName": "lh_ls_adls_oic",
 			"type": "LinkedServiceReference"
 		},
 		"parameters": {

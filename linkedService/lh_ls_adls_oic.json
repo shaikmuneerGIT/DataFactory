@@ -1,0 +1,14 @@
+{
+	"name": "lh_ls_adls_oic",
+	"properties": {
+		"description": "ADLS Gen2 landing account written by OIC (MDM customer events): oicmdmlandingmuneer, container landing. The factory's managed identity has Storage Blob Data Contributor on it.",
+		"annotations": [
+			"lakehouse",
+			"mdm"
+		],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://oicmdmlandingmuneer.dfs.core.windows.net/"
+		}
+	}
+}
