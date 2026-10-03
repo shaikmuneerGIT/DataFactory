@@ -1,15 +1,15 @@
 {
 	"name": "lh_ls_fabric_lakehouse",
 	"properties": {
-		"description": "Microsoft Fabric lakehouse lh_retail (workspace lh_retail_dev), Files area. Authenticates as service principal spn_adb_to_adls (secret from Key Vault 'spn-secret'); the principal must be a Contributor of the Fabric workspace and the tenant setting 'Service principals can call Fabric public APIs' must be on. Used by the MDM customer path (lh_pl_mdm_customer_to_fabric).",
+		"description": "Microsoft Fabric lakehouse lh_retail (workspace lh_retail_dev), Files area. Authenticates as service principal spn_adb_to_adls (secret from Key Vault 'spn-secret'); the principal must be a Contributor of the Fabric workspace and the tenant setting 'Service principals can call Fabric public APIs' must be on. Used by the MDM customer path (lh_pl_mdm_customer_to_fabric). Points at workspace lh_mdm_dev (632268f1-b451-4c05-9b20-6ca389ac8145) / lakehouse lh_mdm (b7e4cfb8-5531-4d8a-ba7b-182bab90b032) since 2026-10-03; the retail workspace lh_retail_dev is untouched.",
 		"annotations": [
 			"lakehouse",
 			"mdm"
 		],
 		"type": "Lakehouse",
 		"typeProperties": {
-			"workspaceId": "7d6cf283-5e16-4271-a2c7-d1494b49695f",
-			"artifactId": "0a72b148-0699-44d7-b56d-3f5c71eae831",
+			"workspaceId": "632268f1-b451-4c05-9b20-6ca389ac8145",
+			"artifactId": "b7e4cfb8-5531-4d8a-ba7b-182bab90b032",
 			"rootFolder": "Files",
 			"tenant": "70d48915-9aaa-460f-9616-a32e05fd1a74",
 			"servicePrincipalId": "fb54154b-f3d6-4c9f-a7e4-f484898ded7e",
